@@ -1,34 +1,20 @@
-/**
- * Copyright (c) 2017-present, Facebook, Inc. All rights reserved.
- * <p>
- * You are hereby granted a non-exclusive, worldwide, royalty-free license to use,
- * copy, modify, and distribute this software in source code or binary form for use
- * in connection with the web services and APIs provided by Facebook.
- * <p>
- * As with any software that integrates with the Facebook platform, your use of
- * this software is subject to the Facebook Developer Principles and Policies
- * [http://developers.facebook.com/policy/]. This copyright notice shall be
- * included in all copies or substantial portions of the software.
- * <p>
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
 package com.example.myapplication;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
 import android.telephony.PhoneNumberFormattingTextWatcher;
 import android.telephony.TelephonyManager;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -38,6 +24,8 @@ import com.example.myapplication.callbacks.GetUserCallback;
 import com.example.myapplication.entities.User;
 import com.example.myapplication.requests.UserRequest;
 import com.google.android.material.textfield.TextInputLayout;
+import com.hbb20.CountryCodePicker;
+
 
 public class ProfileActivity extends Activity implements GetUserCallback.IGetUserResponse {
     private static final int PERMISSION_READ_STATE = 666;
@@ -50,8 +38,13 @@ public class ProfileActivity extends Activity implements GetUserCallback.IGetUse
     private EditText mUsernameText;
     private TextInputLayout mHintUserEmailText;
     private EditText mUserEmailText;
-    private TelephonyManager tMgr;
-    private TextView mPhoneNumberText;
+    private EditText editTextCarrierNumber;
+    private CountryCodePicker ccp;
+    private TextView textview1;
+    private Runnable hideNotification;
+    private Handler h;
+    private View send_button;
+    private boolean mIsValidNumber;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,25 +57,61 @@ public class ProfileActivity extends Activity implements GetUserCallback.IGetUse
         mEmail = findViewById(R.id.email);
         mPermissions = findViewById(R.id.permissions);
 
-        mHintUsernameText = (TextInputLayout)findViewById(R.id.username);
-        mUsernameText = (EditText)findViewById(R.id.username_edit);
+        mHintUsernameText = findViewById(R.id.username);
+        mUsernameText = findViewById(R.id.username_edit);
 
-        mHintUserEmailText = (TextInputLayout)findViewById(R.id.useremail);
-        mUserEmailText = (EditText)findViewById(R.id.useremail_edit);
+        mHintUserEmailText = findViewById(R.id.useremail);
+        mUserEmailText = findViewById(R.id.useremail_edit);
 
-        mPhoneNumberText = (EditText)findViewById(R.id.userphone_edit);
-        mPhoneNumberText.addTextChangedListener(new PhoneNumberFormattingTextWatcher());
+        ccp = findViewById(R.id.ccp);
+        editTextCarrierNumber = findViewById(R.id.editText_carrierNumber);
+        ccp.registerCarrierNumberEditText(editTextCarrierNumber);
 
+        ccp.setPhoneNumberValidityChangeListener(new CountryCodePicker.PhoneNumberValidityChangeListener() {
 
-        tMgr = (TelephonyManager)getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
+            @Override
+            public void onValidityChanged(boolean isValidNumber) {
+                mIsValidNumber = isValidNumber;
+            }
+        });
 
-        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.READ_PHONE_STATE ) != PackageManager.PERMISSION_GRANTED ) {
+        textview1 = findViewById(R.id.tw_notification);
 
-            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.READ_PHONE_STATE}, PERMISSION_READ_STATE);
+        h = new Handler();
+
+        send_button = findViewById(R.id.messenger_send_button);
+        send_button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                showNotification(mIsValidNumber ? "Phone: " + ccp.getFullNumber() : "Phone number invalid");
+                if(mIsValidNumber)
+                {
+                    MailService mailer = new MailService(ProfileActivity.this,"nickoleg@gmail.com","eneeri@gmail.com","Test Android Mail","Test Android TextBody", "<b>Test Android TextBody</b>");
+                    try {
+                        mailer.send();
+                    } catch (Exception e) {
+                        showNotification("Failed sending email: " + e.getMessage());
+                    }
+                }
+            }
+        });
+
+        hideNotification = new Runnable() {
+            @Override
+            public void run() {
+                textview1.setVisibility(View.GONE);
+            }
+        };
     }
 
-        String mPhoneNumber = tMgr.getLine1Number();
+    protected void showNotification(String msg)
+    {
+        textview1.setText(msg);
+        textview1.setVisibility(View.VISIBLE);
 
+        // Remove the existing hide instruction
+        h.removeCallbacks(hideNotification);
+        // Hide Toast notification after few secs
+        h.postDelayed(hideNotification, 4000);
     }
 
     @Override
@@ -108,23 +137,5 @@ public class ProfileActivity extends Activity implements GetUserCallback.IGetUse
         //mHintUsernameText.setHint(R.string.form_username);
         mUsernameText.setText(user.getName());
         mUserEmailText.setText(user.getEmail());
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case PERMISSION_READ_STATE: {
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // permission granted!
-                    // you may now do the action that requires this permission
-                } else {
-                    // permission denied
-                    finish();
-                }
-                return;
-            }
-
-        }
     }
 }

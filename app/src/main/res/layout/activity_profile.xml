@@ -74,7 +74,10 @@
             android:id="@+id/username_edit"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            />
+            android:autofillHints=""
+            android:inputType="textMultiLine"
+            tools:ignore="LabelFor"
+            tools:targetApi="o" />
 
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -88,25 +91,54 @@
             android:id="@+id/useremail_edit"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            />
+            android:autofillHints=""
+            android:inputType="textMultiLine"
+            tools:ignore="LabelFor"
+            tools:targetApi="o" />
 
     </com.google.android.material.textfield.TextInputLayout>
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/userphone"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/form_username_phone">
+        android:gravity="center_vertical">
 
-        <com.example.myapplication.MaskedEditText
-            android:id="@+id/userphone_edit"
+        <com.hbb20.CountryCodePicker
+            android:id="@+id/ccp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:ccp_countryPreference="UA"
+            app:ccp_autoDetectCountry="true"
+            app:ccp_defaultNameCode="UA"
+            app:ccp_autoFormatNumber="true"
+            />
+
+        <EditText
+            android:id="@+id/editText_carrierNumber"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:ems="10"
-            android:text="5"
-            app:mask="(999) 999-9999"
-            app:placeholder="_"/>
+            android:hint="@string/form_username_phone"
+            android:inputType="phone"
+            android:singleLine="true"
+            android:importantForAutofill="no" />
+    </LinearLayout>
 
-    </com.google.android.material.textfield.TextInputLayout>
+    <include
+        layout="@layout/messenger_button_send_blue_large"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_margin="10dp"
+        />
+
+    <TextView
+        android:id="@+id/tw_notification"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:visibility="gone">
+    </TextView>
+
 
 </LinearLayout>
+
+
